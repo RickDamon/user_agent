@@ -159,7 +159,7 @@ func (p *UserAgent) Parse(ua string) {
 		}
 
 		p.detectBrowser(sections)
-		p.detectOS(sections[0])
+		p.detectOS(sections)
 		p.detectModel(sections[0])
 
 		if p.undecided {
