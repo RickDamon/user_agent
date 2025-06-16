@@ -716,6 +716,11 @@ var uastrings = []struct {
 		ua:       "Mozilla/5.0 (Linux; U; Android 2.2.1; zh-cn; HTC_Wildfire_A3333 Build/FRG83D) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1",
 		expected: "Mozilla:5.0 Platform:Linux OS:Android 2.2.1 Localization:zh-cn Model:HTC_Wildfire_A3333 Browser:Android-4.0 Engine:AppleWebKit-533.1 Bot:false Mobile:true",
 	},
+	{
+		title:    "focus",
+		ua:       "Mozilla/5.0 (Linux; Android 12; 2112123AC Build/SKQ1.211230.001; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/137.0.7151.61 Mobile Safari/537.36",
+		expected: "Mozilla:5.0 Platform:Linux OS:Android 2.2.1 Localization:zh-cn Model:HTC_Wildfire_A3333 Browser:Android-4.0 Engine:AppleWebKit-533.1 Bot:false Mobile:true",
+	},
 }
 
 // Internal: beautify the UserAgent reference into a string so it can be

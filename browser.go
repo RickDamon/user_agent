@@ -34,7 +34,6 @@ type Browser struct {
 // sections from the User-Agent string after being parsed.
 func (p *UserAgent) detectBrowser(sections []section) {
 	slen := len(sections)
-
 	if sections[0].name == "Opera" {
 		p.browser.Name = "Opera"
 		p.browser.Version = sections[0].version
@@ -118,6 +117,28 @@ func (p *UserAgent) detectBrowser(sections []section) {
 								p.browser.Name = "Firefox"
 							default:
 								p.browser.Name = "Safari"
+								for _, sec := range sections {
+									if sec.name == "Chrome" || sec.name == "CriOS" || sec.name == "HeadlessChrome" || sec.name == "Chromium" {
+										p.browser.Name = sec.name
+										p.browser.Version = sec.version
+										p.browser.Engine = "AppleWebKit"
+										for _, s := range sections {
+											if s.name == "AppleWebKit" {
+												p.browser.EngineVersion = s.version
+												break
+											}
+										}
+										return
+									}
+								}
+								for i := len(sections) - 1; i >= 0; i-- {
+									if sections[i].name == "Safari" || sections[i].name == "Mobile Safari" {
+										if sections[i].version != "" {
+											p.browser.Version = sections[i].version
+											break
+										}
+									}
+								}
 							}
 						}
 					}
@@ -175,14 +196,6 @@ func (p *UserAgent) detectBrowser(sections []section) {
 			// If the Trident token is not provided, fall back to MSIE token.
 			if p.browser.Version == "" {
 				p.browser.Version = strings.TrimSpace(comment[1][4:])
-			}
-		}
-		// ===== Patch: if Chrome/CriOS section exists, override browser name/version =====
-		for _, sec := range sections {
-			if sec.name == "Chrome" || sec.name == "CriOS" {
-				p.browser.Name = "Chrome"
-				p.browser.Version = sec.version
-				break
 			}
 		}
 
