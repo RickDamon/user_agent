@@ -177,6 +177,15 @@ func (p *UserAgent) detectBrowser(sections []section) {
 				p.browser.Version = strings.TrimSpace(comment[1][4:])
 			}
 		}
+		// ===== Patch: if Chrome/CriOS section exists, override browser name/version =====
+		for _, sec := range sections {
+			if sec.name == "Chrome" || sec.name == "CriOS" {
+				p.browser.Name = "Chrome"
+				p.browser.Version = sec.version
+				break
+			}
+		}
+
 	}
 }
 

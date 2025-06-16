@@ -74,9 +74,6 @@ func webkit(p *UserAgent, comment []string) {
 		p.os = comment[0]
 	} else if p.platform == "Linux" {
 		p.mobile = true
-		if p.browser.Name == "Safari" {
-			p.browser.Name = "Android"
-		}
 		if len(comment) > 1 {
 			if comment[1] == "U" || comment[1] == "arm_64" {
 				if len(comment) > 2 {
