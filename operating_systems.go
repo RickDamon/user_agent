@@ -61,27 +61,66 @@ func normalizeOS(name string) string {
 // The first argument p is a reference to the current UserAgent and the second
 // argument is a slice of strings containing the comment.
 func webkit(p *UserAgent, comment []string) {
-	// 设置默认平台
-	if p.platform == "" {
-		p.platform = getPlatform(comment)
-	}
-
-	// 设置 OS（如 Android 12）
-	if p.os == "" && len(comment) > 1 {
-		p.os = normalizeOS(comment[1])
-	}
-
-	// 检查是否为 WebView (如 "wv")
-	for _, c := range comment {
-		if c == "wv" || strings.Contains(c, "wv") {
-			p.mobile = true
-			if strings.Contains(p.browser.Name, "Chrome") {
-				p.browser.Name = "Chrome WebView"
-			} else {
-				p.browser.Name = "Android WebView"
-			}
-			break
+	if p.platform == "webOS" {
+		p.browser.Name = p.platform
+		p.os = "Palm"
+		if len(comment) > 2 {
+			p.localization = comment[2]
 		}
+		p.mobile = true
+	} else if p.platform == "Symbian" {
+		p.mobile = true
+		p.browser.Name = p.platform
+		p.os = comment[0]
+	} else if p.platform == "Linux" {
+		p.mobile = true
+		if p.browser.Name == "Safari" {
+			p.browser.Name = "Android"
+		}
+		if len(comment) > 1 {
+			if comment[1] == "U" || comment[1] == "arm_64" {
+				if len(comment) > 2 {
+					p.os = comment[2]
+				} else {
+					p.mobile = false
+					p.os = comment[0]
+				}
+			} else {
+				p.os = comment[1]
+			}
+		}
+		if len(comment) > 3 {
+			p.localization = comment[3]
+		} else if len(comment) == 3 {
+			_ = p.googleOrBingBot()
+		}
+	} else if len(comment) > 0 {
+		if len(comment) > 3 {
+			p.localization = comment[3]
+		}
+		if strings.HasPrefix(comment[0], "Windows NT") {
+			p.os = normalizeOS(comment[0])
+		} else if len(comment) < 2 {
+			p.localization = comment[0]
+		} else if len(comment) < 3 {
+			if !p.googleOrBingBot() && !p.iMessagePreview() {
+				p.os = normalizeOS(comment[1])
+			}
+		} else {
+			p.os = normalizeOS(comment[2])
+		}
+		if p.platform == "BlackBerry" {
+			p.browser.Name = p.platform
+			if p.os == "Touch" {
+				p.os = p.platform
+			}
+		}
+	}
+
+	// Special case for Firefox on iPad, where the platform is advertised as Macintosh instead of iPad
+	if p.platform == "Macintosh" && p.browser.Engine == "AppleWebKit" && p.browser.Name == "Firefox" {
+		p.platform = "iPad"
+		p.mobile = true
 	}
 }
 
@@ -218,18 +257,16 @@ func getPlatform(comment []string) string {
 }
 
 // Detect some properties of the OS from the given section.
-func (p *UserAgent) detectOS(sections []section) {
-	if len(sections) == 0 {
-		return
-	}
-	s := sections[0]
-
+func (p *UserAgent) detectOS(s section) {
 	if s.name == "Mozilla" {
+		// Get the platform here. Be aware that IE11 provides a new format
+		// that is not backwards-compatible with previous versions of IE.
 		p.platform = getPlatform(s.comment)
 		if p.platform == "Windows" && len(s.comment) > 0 {
 			p.os = normalizeOS(s.comment[0])
 		}
 
+		// And finally get the OS depending on the engine.
 		switch p.browser.Engine {
 		case "":
 			p.undecided = true
@@ -237,20 +274,6 @@ func (p *UserAgent) detectOS(sections []section) {
 			gecko(p, s.comment)
 		case "AppleWebKit":
 			webkit(p, s.comment)
-
-			// 额外：浏览器名称从后续段获取
-			for _, sec := range sections {
-				if strings.EqualFold(sec.name, "Chrome") {
-					p.browser.Name = "Chrome"
-					p.browser.Version = sec.version
-					break
-				}
-				if strings.EqualFold(sec.name, "Version") {
-					p.browser.Name = "Android WebView"
-					p.browser.Version = sec.version
-					break
-				}
-			}
 		case "Trident":
 			trident(p, s.comment)
 		}
@@ -267,6 +290,7 @@ func (p *UserAgent) detectOS(sections []section) {
 		p.browser.Name = "OkHttp"
 		p.browser.Version = s.version
 	} else {
+		// Check whether this is a bot or just a weird browser.
 		p.undecided = true
 	}
 }
